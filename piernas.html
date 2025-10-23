@@ -1,0 +1,18 @@
+<html>
+<title>Modelo de huesos de unas piernas</title>
+	<script src="https://cdn.jsdelivr.net/npm/aframe@1.4.1/dist/aframe-master.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+<head>
+</head>
+<body>
+	<a-scene>
+		<a-entity id="huesos" src="./hueso.glb"></a-entity>
+		<a-entity
+			gltf-model="#huesos"
+			scale="1 1 1"
+			position="0 0 -5"
+			rotation="0 0 0">
+		</a-entity>
+	</a-scene>
+</body>
+</html>
