@@ -6,6 +6,7 @@
 </head>
 <body>
 	<a-scene>
+		<a-entity id="brain" src="./brain.glb"></a-entity>
 		<a-entity id="tumor" src="./tumor.glb"></a-entity>
 		<a-entity
 			gltf-model="#tumor"
@@ -13,8 +14,15 @@
 			position="0 0 -7"
 			rotation="0 0 0">
 		</a-entity>
+		<a-entity
+			gltf-model="#brain"
+			scale="0.1 0.1 0.1"
+			position="-3 0 -7"
+			rotation="0 0 0">
+		</a-entity>
 	</a-scene>
 </body>
 
 </html>
+
 
