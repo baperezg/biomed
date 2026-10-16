@@ -1,1 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Laboratorio Virtual de Química: Síntesis de FeS</title>
+  <!-- A-Frame Library -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <style>
+    #hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: #ffffff;
+      background: rgba(15, 23, 42, 0.85);
+      padding: 16px 20px;
+      border-radius: 8px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      z-index: 1000;
+      max-width: 320px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    #hud h2 {
+      margin: 0 0 10px 0;
+      font-size: 1.1rem;
+      color: #38bdf8;
+    }
+    #hud p {
+      margin: 6px 0;
+      font-size: 0.9rem;
+    }
+    .temp-indicator {
+      font-weight: bold;
+      color: #f87171;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Interfaz 2D superpuesta para lectura de instrumentos -->
+  <div id="hud">
+    <h2>Laboratorio de Química</h2>
+    <p><strong>Estado:</strong> <span id="status-text">Agrega los reactivos al crisol</span></p>
+    <p><strong>Hierro (Fe):</strong> <span id="fe-status">0%</span></p>
+    <p><strong>Azufre (S):</strong> <span id="s-status">0%</span></p>
+    <p><strong>Temperatura:</strong> <span id="temp-display" class="temp-indicator">25 °C</span></p>
+  </div>
+
+  <a-scene background="color: #1e293b">
+    
+    <!-- Luces y Entorno -->
+    <a-entity light="type: ambient; color: #cbd5e1; intensity: 0.6"></a-entity>
+    <a-entity id="main-light" light="type: point; intensity: 0.9; distance: 10; color: #fff" position="0 3 0"></a-entity>
+    <a-entity id="flame-light" light="type: point; intensity: 0; distance: 2; color: #f97316" position="0 1.25 -2"></a-entity>
+
+    <!-- Cámara con cursor interactivo (raycaster) -->
+    <a-entity position="0 1.6 0">
+      <a-camera look-controls wasd-controls>
+        <a-cursor 
+          color="#38bdf8" 
+          fuse="false" 
+          raycaster="objects: .clickable" 
+          scale="0.8 0.8 0.8">
+        </a-cursor>
+      </a-camera>
+    </a-entity>
+
+    <!-- Mesa de Laboratorio -->
+    <a-box position="0 0.85 -2" width="2.4" height="0.1" depth="1.2" color="#334155" roughness="0.4"></a-box>
+    <a-cylinder position="-1 0.4 -2.4" radius="0.04" height="0.8" color="#64748b"></a-cylinder>
+    <a-cylinder position="1 0.4 -2.4" radius="0.04" height="0.8" color="#64748b"></a-cylinder>
+    <a-cylinder position="-1 0.4 -1.6" radius="0.04" height="0.8" color="#64748b"></a-cylinder>
+    <a-cylinder position="1 0.4 -1.6" radius="0.04" height="0.8" color="#64748b"></a-cylinder>
+
+    <!-- Quemador Bunsen / Antorcha industrial -->
+    <a-cylinder position="0 0.95 -2" radius="0.08" height="0.1" color="#0f172a"></a-cylinder>
+    <a-cylinder position="0 1.15 -2" radius="0.02" height="0.3" color="#94a3b8"></a-cylinder>
+    <!-- Llama (inicialmente invisible) -->
+    <a-cone id="burner-flame" position="0 1.35 -2" radius-bottom="0.04" radius-top="0.005" height="0.15" color="#38bdf8" visible="false" material="opacity: 0.85; transparent: true"></a-cone>
+
+    <!-- Trípode y Soporte de Rejilla -->
+    <a-cylinder position="-0.15 1.15 -2.1" radius="0.01" height="0.5" color="#000"></a-cylinder>
+    <a-cylinder position="0.15 1.15 -2.1" radius="0.01" height="0.5" color="#000"></a-cylinder>
+    <a-cylinder position="0 1.15 -1.85" radius="0.01" height="0.5" color="#000"></a-cylinder>
+    <a-ring position="0 1.4 -2" rotation="-90 0 0" radius-inner="0.08" radius-outer="0.12" color="#0f172a"></a-ring>
+
+    <!-- Crisol de porcelana refractario sobre el fuego -->
+    <a-cylinder id="crucible" position="0 1.46 -2" radius="0.1" height="0.12" color="#f8fafc" open-ended="false">
+      <!-- Masa de reacción interna -->
+      <a-sphere id="mix-substance" position="0 0.04 0" radius="0.08" scale="1 0.35 1" visible="false" color="#64748b"></a-sphere>
+    </a-cylinder>
+
+    <!-- Botella de Reactivo: Polvo de Hierro (Fe) -->
+    <a-group id="btn-fe" class="clickable" position="-0.6 1.05 -1.8">
+      <a-cylinder radius="0.07" height="0.25" color="#475569"></a-cylinder>
+      <a-cylinder position="0 0.15 0" radius="0.03" height="0.06" color="#0f172a"></a-cylinder>
+      <a-text value="Fe\n(Polvo)" align="center" position="0 0 0.075" scale="0.25 0.25 0.25" color="#fff"></a-text>
+    </a-group>
+
+    <!-- Botella de Reactivo: Polvo de Azufre (S) -->
+    <a-group id="btn-s" class="clickable" position="-0.35 1.05 -1.8">
+      <a-cylinder radius="0.07" height="0.25" color="#eab308"></a-cylinder>
+      <a-cylinder position="0 0.15 0" radius="0.03" height="0.06" color="#0f172a"></a-cylinder>
+      <a-text value="S\n(Polvo)" align="center" position="0 0 0.075" scale="0.25 0.25 0.25" color="#000"></a-text>
+    </a-group>
+
+    <!-- Interruptor de Calentamiento (>1000 °C) -->
+    <a-box id="btn-heat" class="clickable" position="0.45 0.95 -1.8" depth="0.15" height="0.08" width="0.25" color="#dc2626">
+      <a-text value="CALENTAR\n(>1000 C)" align="center" position="0 0 0.08" scale="0.18 0.18 0.18" color="#ffffff"></a-text>
+    </a-box>
+
+    <!-- Botón de Reinicio -->
+    <a-box id="btn-reset" class="clickable" position="0.75 0.95 -1.8" depth="0.15" height="0.08" width="0.2" color="#475569">
+      <a-text value="REINICIAR" align="center" position="0 0 0.08" scale="0.18 0.18 0.18" color="#ffffff"></a-text>
+    </a-box>
+
+    <!-- Suelo -->
+    <a-plane position="0 0 0" rotation="-90 0 0" width="10" height="10" color="#0f172a"></a-plane>
+
+  </a-scene>
+
+  <!-- Lógica Química y Eventos -->
+  <script>
+    let hasIron = false;
+    let hasSulfur = false;
+    let isHeating = false;
+    let reactionComplete = false;
+    let temperature = 25;
+    let heatInterval = null;
+
+    const elMix = document.querySelector('#mix-substance');
+    const elFlame = document.querySelector('#burner-flame');
+    const elFlameLight = document.querySelector('#flame-light');
+    const elTemp = document.querySelector('#temp-display');
+    const elStatus = document.querySelector('#status-text');
+    const elFeStatus = document.querySelector('#fe-status');
+    const elSStatus = document.querySelector('#s-status');
+
+    // 1. Agregar Hierro
+    document.querySelector('#btn-fe').addEventListener('click', () => {
+      if (reactionComplete) return;
+      hasIron = true;
+      elFeStatus.innerText = '100% (Gris metálico)';
+      updateMixtureColor();
+    });
+
+    // 2. Agregar Azufre
+    document.querySelector('#btn-s').addEventListener('click', () => {
+      if (reactionComplete) return;
+      hasSulfur = true;
+      elSStatus.innerText = '100% (Amarillo)';
+      updateMixtureColor();
+    });
+
+    function updateMixtureColor() {
+      elMix.setAttribute('visible', 'true');
+      if (hasIron && !hasSulfur) {
+        elMix.setAttribute('color', '#64748b'); // Gris
+        elStatus.innerText = 'Hierro agregado. Falta el azufre.';
+      } else if (!hasIron && hasSulfur) {
+        elMix.setAttribute('color', '#facc15'); // Amarillo
+        elStatus.innerText = 'Azufre agregado. Falta el hierro.';
+      } else if (hasIron && hasSulfur && !reactionComplete) {
+        elMix.setAttribute('color', '#ca8a04'); // Mezcla heterogénea pardo-amarillenta
+        elStatus.innerText = 'Mezcla Fe + S lista. Listo para calentar.';
+      }
+    }
+
+    // 3. Encender mechero y calentar por encima de 1000 °C
+    document.querySelector('#btn-heat').addEventListener('click', () => {
+      if (isHeating || reactionComplete) return;
+      if (!hasIron || !hasSulfur) {
+        alert("Debes agregar ambos reactivos (Fe y S) antes de iniciar el calentamiento.");
+        return;
+      }
+
+      isHeating = true;
+      elFlame.setAttribute('visible', 'true');
+      elFlameLight.setAttribute('light', 'intensity', 1.8);
+      elStatus.innerText = 'Calentando crisol con soplete de alta temperatura...';
+
+      heatInterval = setInterval(() => {
+        if (temperature < 1050) {
+          temperature += 35;
+          elTemp.innerText = `${temperature} °C`;
+
+          // A partir de 1000 °C se desata la reacción exotérmica
+          if (temperature >= 1000 && !reactionComplete) {
+            triggerReaction();
+          }
+        }
+      }, 100);
+    });
+
+    function triggerReaction() {
+      reactionComplete = true;
+      clearInterval(heatInterval);
+      
+      // Destello exotérmico y transición a FeS (negro poroso)
+      elFlameLight.setAttribute('light', 'color', '#fef08a');
+      elFlameLight.setAttribute('light', 'intensity', 3.5);
+      elMix.setAttribute('animation', 'property: components.material.material.color; type: color; to: #09090b; dur: 1200');
+
+      setTimeout(() => {
+        elFlame.setAttribute('visible', 'false');
+        elFlameLight.setAttribute('light', 'intensity', 0);
+        isHeating = false;
+        elStatus.innerText = '¡Reacción completada a >1000 °C! Se ha sintetizado Sulfuro de Hierro (FeS, sólido negro).';
+      }, 1500);
+    }
+
+    // 4. Reiniciar la práctica
+    document.querySelector('#btn-reset').addEventListener('click', () => {
+      clearInterval(heatInterval);
+      hasIron = false;
+      hasSulfur = false;
+      isHeating = false;
+      reactionComplete = false;
+      temperature = 25;
+
+      elMix.setAttribute('visible', 'false');
+      elMix.setAttribute('color', '#64748b');
+      elFlame.setAttribute('visible', 'false');
+      elFlameLight.setAttribute('light', 'intensity', 0);
+      elTemp.innerText = '25 °C';
+      elFeStatus.innerText = '0%';
+      elSStatus.innerText = '0%';
+      elStatus.innerText = 'Agrega los reactivos al crisol';
+    });
+  </script>
+</body>
+</html>
 
